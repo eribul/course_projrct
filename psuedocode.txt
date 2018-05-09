@@ -1,0 +1,22 @@
+Load SHAR data using R (stored as .RData files so not in a standard format).
+
+Load ice-hockey data using pandas.read_excel
+
+For each SHAR data set:
+  identify which variables are of relevance from the ice hockey file
+  keep only those variables
+  identify id-column and rename to "ID"
+  check that relevant date columns are stored as dates
+
+For each PROM-data set from SHAR
+  Make date columns with min- and max-dates of time intervals containing corresponding date of surgery
+
+Left equi-join with hockey data and SHAR operation data by ID-column.
+
+Non equi-join with preoperative PROM-data corresponding to patient ID and relevant date intervals.
+
+Non equi-join with post-operative PROM-data corresponding to patient ID and relevant date intervals.
+
+Order rows after ID and columns by orignial column names of hockey data.
+
+Export dataframe to Excel.
