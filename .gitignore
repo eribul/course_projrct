@@ -2,3 +2,8 @@
 .Rhistory
 .RData
 .Ruserdata
+.feather
+data/*
+cache/*
+data-raw/*
+README.html

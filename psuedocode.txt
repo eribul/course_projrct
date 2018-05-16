@@ -1,14 +1,31 @@
-Load SHAR data using R (stored as .RData files so not in a standard format).
+---------
+NOTE
 
-Load ice-hockey data using pandas.read_excel
+All data used in this project is fake!
+It does not correspond to any real data.
+The only thing that is real is some varoiable names that can also be found
+in the real data set!
+---------
 
-For each SHAR data set:
-  identify which variables are of relevance from the ice hockey file
+SETUP
+
+This project is planned to be carried on using RStudio. RStudio will get
+extended support for Python integration in version 1.2.
+This version is not yet officially released but can be downloaded
+from daily builds: https://dailies.rstudio.com/
+---------
+
+PSEUDO CODE
+
+Load data (stored as .feather files; a common format used by R and Python/pandas).
+
+For each data set:
+  identify which variables are of relevance from the case data
   keep only those variables
   identify id-column and rename to "ID"
   check that relevant date columns are stored as dates
 
-For each PROM-data set from SHAR
+For each PROM-data set
   Make date columns with min- and max-dates of time intervals containing corresponding date of surgery
 
 Left equi-join with hockey data and SHAR operation data by ID-column.
