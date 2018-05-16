@@ -10,14 +10,13 @@ All python code is found in the file `non_equi_joins.Rmd`. This is R markdown fi
 
 # System requirements
 
-**Python3** with packages `feather`, `numpy`, `pandas`
+**Python3** with packages [feather](https://github.com/wesm/feather) (to read data), [numpy](http://www.numpy.org/) (for numerical calculations), [pandas](https://pandas.pydata.org/) (fopr data manipulation).
 
 **R:** The R markdown file include Python code but the document itself is generating a HTML-repost by using R.
 It is therefore necessary to install R in order to produce the report.
 Do that from here: https://cloud.r-project.org/
 
-**R packages:** The new package `reticulate` is used to incorporate Python code in R. 
-Also the `rmarkdown` package is used to generate the report.
+**R packages:** [reticulate](https://rstudio.github.io/reticulate/) (to integrate R and Python), [rmarkdown](https://rmarkdown.rstudio.com/) (to generate R markdown reports). 
 
 
 **RStudio v 1.2:** Personally I prefer to use RStudio for the generating process (although this might not be strictly necessary).
