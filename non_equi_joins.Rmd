@@ -1,0 +1,234 @@
+---
+title: "Data wrangling using pandas"
+author: "Erik Bülow"
+date: "9 maj 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(reticulate)
+```
+
+
+# Background
+
+We would like to replicate an earlier data management project made in R with Python.
+Note that this project must be run in RStudio version > 1.2 (https://dailies.rstudio.com/).
+
+
+# Some useful modules
+
+We start by importing some useful Python modules
+
+```{python modules}
+import numpy as np
+import pandas as pd
+import feather
+```
+
+
+
+# Import data
+
+We have pre-proccesed some data in R to anonymise it. We have stored four data sets
+in the `.feather`-format that can be used by both R and Python 
+(https://blog.rstudio.com/2016/03/29/feather/).
+
+
+
+# Check variable names to use from the data
+
+```{python load_data}
+
+# A data set with interesting cases identified by id numbers
+df_cases       = feather.read_dataframe("data/df_cases.feather")
+
+# Background data from a data base that we want to add to the cases
+df_op          = feather.read_dataframe("data/df_op.feather")
+df_prom_before = feather.read_dataframe("data/df_prom_before.feather")
+df_prom_after  = feather.read_dataframe("data/df_prom_after.feather")
+
+```
+The `df_cases` is prefiled with some variables found in the background data sets. 
+No data is stored in those variables but it was a way to specify what data should be added.
+
+First, check which variables we have to fill up:
+
+```{python print_names}
+for n in df_cases.columns.values:
+  print(n)
+```
+
+We do not know where to find each variable that should be append to `df_cases` (it can be in any one of the background data sets).
+We therefora make some variables containing variable names that will be used from each data set.
+Note that the project data has been pre-processed in order to make it anonymise and to not disclose too much data. 
+This step might therefore be seen as unnecessary here, but it was relevant in the original project where each data set might have hundreds of columns that are not relevant in the specific case. 
+
+```{python find_cols, eval = TRUE}
+
+def relevant_columns(x):
+    """
+    Function to find columns names from x also found in 'df_cases' 
+    """
+    return np.intersect1d(df_cases.columns.values, x.columns.values)
+
+# Relevant columns from each background data set
+cols_in_df_op          = relevant_columns(df_op)
+cols_in_df_prom_before = relevant_columns(df_prom_before)
+cols_in_df_prom_after  = relevant_columns(df_prom_after)
+
+
+# Find which columns in df_cases can be found only in this data set
+cols_in_df_cases = (
+    np.concatenate([['fake_id'],
+        np.setdiff1d(
+            df_cases.columns.values,
+            np.concatenate([
+                df_op.columns.values,
+                df_prom_before.columns.values,
+                df_prom_after.columns.values
+            ])
+        )
+    ])
+)
+```
+
+Let us print out the number of value columns to use from each data set (we need some additional columns for indexing etcetera) just to get a feeling of what is needed:
+
+```{python print_colnum, eval = TRUE}
+print([len(x) for x in [
+  cols_in_df_op, cols_in_df_prom_before, cols_in_df_prom_after, cols_in_df_cases]
+])
+```
+
+
+# Keep only relevant data columns
+
+We have now find which columns to use from each dataset. Lets remove all columns that we do not need:
+
+```{python select_cols, eval = TRUE}
+df_cases       = df_cases[cols_in_df_cases]
+df_op          = df_op[cols_in_df_op]
+df_prom_before = df_prom_before[cols_in_df_prom_before]
+df_prom_after  = df_prom_after[cols_in_df_prom_after]
+```
+
+
+# Time periods
+
+We have to do identify date columns and store them as such.
+
+```{python}
+df_op['P_SurgDate']         = pd.to_datetime(df_op['P_SurgDate'])
+df_prom_before['PREP_Date'] = pd.to_datetime(df_prom_before['PREP_Date'])
+df_prom_after['POSTP_Date'] = pd.to_datetime(df_prom_after['POSTP_Date'])
+```
+
+We will soon do some non equi joins based on the date columns. 
+This requires us to first identify some wider time periods that the data from `df_op` relates to.
+
+```{python}
+df_prom_before = (
+    df_prom_before.assign(
+        # The lower bound is actually just "PREP_Date" itself but we prepare the
+        # code if we would like to modify this later
+        PREP_Date_min = lambda x: x.PREP_Date - pd.to_timedelta(0  , unit = 'd'),
+        PREP_Date_max = lambda x: x.PREP_Date + pd.to_timedelta(180, unit = 'd')
+    )
+)
+
+df_prom_after = (
+    df_prom_after.assign(
+        POSTP_Date_min = lambda x: x.POSTP_Date - pd.to_timedelta(365 - 180, unit = 'd'),
+        POSTP_Date_max = lambda x: x.POSTP_Date - pd.to_timedelta(356 + 180, unit = 'd')
+    )
+)
+
+```
+
+
+
+# Left equi join from df_op
+
+It is now time to get some background data to add to the cases. The first step is just an equi-join where we want to add relevant columns from `df_op` to the cases in `df_cases`. This is done by a left join on the `fake_id` key column. We initiate a new dataFrame as a copy of `df_cases` and we keep track of its dimensionality before and after the join.
+
+```{python}
+
+df = df_cases
+
+def print_dims():
+    print("Rows and columns of df:", end = " ")
+    for d in df.shape:
+        print(d, end = " ")
+
+print_dims()
+
+df = pd.merge(df_cases, df_op, how = 'left')
+
+print_dims()
+```
+
+Both the number of rows and columns grow. This means that some cases are found more than once in `df_op` and (of course) that we have added the specified columns.
+
+Let's have a look at the resultnig data:
+
+```{python}
+print(df.head())
+```
+
+We see a lot of NaN:s since most cases were not actually found in `df_op`.
+
+
+# Add data from df_prom_before
+
+Now it starts to get a little tricky. We want to add some data from `df_prom_before`.
+Each individual might have more than one data row in this data set but we only want to include rows where `df_prom_before.PREP_Date` is a date at most 180 days before `df_cases.P_SurgDate` (we created `df_prom_before.PREP_Date_min` and `df_prom_before.PREP_Date_max` to make this comparison easier).
+Note that we do not want an inner join with just the cases where this condition is fullfiled. What we want is to add only those rows, but at the same time to keep al other rows intact (adding NaN values instead of the new values to the same columns). This is called a non equi join, since we do not only join by using a primary key being equal in both data sets, but we also need to compare date columns that should not be equal in order to join.
+
+There is not much information to help with this task. There is a question asked on StackOverflow but wihout any answer ([here](https://stackoverflow.com/questions/35591993/non-equi-join-in-pandas)). There is also a [gist](https://gist.github.com/Nikolay-Lysenko/492a93aa834fb73b8090ade9506c3c90) with some unfinished code.
+
+An alternative approach would be to split the task into two sub tasks: 
+
+1. Do an inner equi join between `df` and `df_prom_before` by `fake_id`. 
+2. We then filter out all rows from the data set from row 1 where the date comparison is not satisifed.
+3. We then drop all duplicated rows that might have been included.
+3. We do a left equi join between `df` and the result from previous steps.
+
+Let's do step 1 - 3 first:
+
+```{python}
+df_tmp = (
+    pd.merge(df, df_prom_before)
+    .query('PREP_Date_min <= P_SurgDate <= PREP_Date_max')
+    .drop_duplicates()
+)
+```
+
+And let's have an intermediate look at the result:
+
+```{python}
+print(df_tmp.loc[:, ['fake_id', 'P_SurgDate', 'PREP_Date_min', 'PREP_Date_max']])
+```
+
+Looks alright! Time for step number 4:
+
+```{python}
+df = pd.merge(df, df_tmp, "left")
+print_dims()
+```
+The number of columns is the same but the number of columns have increased. Good!
+Let's see how many non-missing data points we have for some columns.
+
+```{python}
+print(df.loc[:, ['fake_id', 'HipRegStartHere', 'P_SurgDate', 'PREP_Date']].count())
+```
+
+All our cases have an id (actually they are not all unique since some individuals occour more than once). Only 30 cases could be found in `df_op` and only 16 was then found in `df_prom_before`. The column `HipRegStartHere` is some sort of crazy placeholder column indicating where the added column will start (empty by default).
+
+
+# Add data from df_prom_after
+
+# Sort and format output
+
+# Export result to Excel
