@@ -229,6 +229,18 @@ All our cases have an id (actually they are not all unique since some individual
 
 # Add data from df_prom_after
 
+We now want to add some additional data from `df_prom_after`. This is similar to the previuos step but with two differences:
+
+1. It is much more likely that each individual have more than one corresponding data points in this data set. It is therefore more important to identify the relevant time period. 
+2. The relevant time period is here one year after (not before) `P_Surg_Date`. We allow a time window of 180 days before and after this date, hence $356 \pm 180 = (185, 545)$ days after `P_Surg_Date`.
+
+
+```{r}
+
+```
+
+
+
 # Sort and format output
 
 # Export result to Excel

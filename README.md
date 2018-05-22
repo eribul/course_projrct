@@ -30,3 +30,8 @@ To use the capabilities of intermingling Python code in R markdown, RStudio v 1.
 As of today (2018-05-16) this version has not yet been officially released.
 It can be found though from a daily build: https://dailies.rstudio.com/
 Note that this is (so far) not the version that can be installed easily from within Anaconda).
+
+
+# Simplified alternative
+
+I understand that all these extra requirements might seem overwhelming. Therefore, the output of the generated R markdown report is also [published using Github Pages](https://eribul.github.io/course_projrct/). The relevant Python code is presented in grey boxes. It can be copied to a file in the local version of the Git repository (in order to make relative paths to the data folder work as intended). The resulting code can then be run as any other Python code.  

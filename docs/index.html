@@ -515,6 +515,11 @@ print_dims()</code></pre>
 </div>
 <div id="add-data-from-df_prom_after" class="section level1">
 <h1>Add data from df_prom_after</h1>
+<p>We now want to add some additional data from <code>df_prom_after</code>. This is similar to the previuos step but with two differences:</p>
+<ol style="list-style-type: decimal">
+<li>It is much more likely that each individual have more than one corresponding data points in this data set. It is therefore more important to identify the relevant time period.</li>
+<li>The relevant time period is here one year after <code>P_Surg_Date</code>. We allow a time window of 180 days before and after this date, hence <span class="math inline">\(356 \pm 180 = (185, 545)\)</span>.</li>
+</ol>
 </div>
 <div id="sort-and-format-output" class="section level1">
 <h1>Sort and format output</h1>
