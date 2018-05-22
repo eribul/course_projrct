@@ -7,9 +7,13 @@ This is a mandatory project for the PhD course in Python 2018.
 I include some pseudo data in the data-folder.
 One data set identifies cases `df_cases.feather`. Rows corresponds to individual and most columns are just placeholders without any data.
 The aim of the project is to allocate data from three other data sources and to fill up the empty columns for the cases. 
-More de4tilas can be found in the `pseudocode.txt` file. 
+More detilas can be found in the `pseudocode.txt` file. 
 
-All python code is found in the file `non_equi_joins.Rmd`. This is a R markdown file but it includes Python code. 
+All python code is found in the file `non_equi_joins.Rmd`. This is a R markdown file but it includes Python code within code blocks like this:
+
+  ```{python}
+  # python code
+  ```
 
 
 # Why use Rmarkdown?
