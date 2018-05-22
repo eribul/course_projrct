@@ -12,9 +12,9 @@ More detilas can be found in the `pseudocode.txt` file.
 All python code is found in the file `non_equi_joins.Rmd`. This is a R markdown file but it includes Python code within code blocks like this:
 
 ```
-  ```{python}
-  # python code
-  ```
+#  ```{python}
+#  # python code
+#  ```
 ```
 
 # Why use Rmarkdown?
