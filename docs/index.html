@@ -11,6 +11,7 @@
 
 <meta name="author" content="Erik Bülow" />
 
+<meta name="date" content="2018-05-30" />
 
 <title>Data wrangling using pandas</title>
 
@@ -305,14 +306,14 @@ $(document).ready(function () {
 
 <h1 class="title toc-ignore">Data wrangling using pandas</h1>
 <h4 class="author"><em>Erik Bülow</em></h4>
-<h4 class="date"><em>9 maj 2018</em></h4>
+<h4 class="date"><em>2018-05-30</em></h4>
 
 </div>
 
 
 <div id="background" class="section level1">
 <h1>Background</h1>
-<p>We would like to replicate an earlier data management project made in R with Python. Note that this project must be run in RStudio version &gt; 1.2 (<a href="https://dailies.rstudio.com/" class="uri">https://dailies.rstudio.com/</a>).</p>
+<p>This project intends to replicate an earlier data management task proceded with R.</p>
 </div>
 <div id="some-useful-modules" class="section level1">
 <h1>Some useful modules</h1>
@@ -323,17 +324,17 @@ import feather</code></pre>
 </div>
 <div id="import-data" class="section level1">
 <h1>Import data</h1>
-<p>We have pre-proccesed some data in R to anonymise it. We have stored four data sets in the <code>.feather</code>-format that can be used by both R and Python (<a href="https://blog.rstudio.com/2016/03/29/feather/" class="uri">https://blog.rstudio.com/2016/03/29/feather/</a>).</p>
-</div>
-<div id="check-variable-names-to-use-from-the-data" class="section level1">
-<h1>Check variable names to use from the data</h1>
+<p>We have pre-proccesed some data in R to anonymise it. There are four data sets stored in the <code>data</code> folder and saved in the <a href="https://blog.rstudio.com/2016/03/29/feather/">feather format</a> that can be used by both R and Python.</p>
 <pre class="python"><code># A data set with interesting cases identified by id numbers
 df_cases       = feather.read_dataframe(&quot;data/df_cases.feather&quot;)
 # Background data from a data base that we want to add to the cases
 df_op          = feather.read_dataframe(&quot;data/df_op.feather&quot;)
 df_prom_before = feather.read_dataframe(&quot;data/df_prom_before.feather&quot;)
 df_prom_after  = feather.read_dataframe(&quot;data/df_prom_after.feather&quot;)</code></pre>
-<p>The <code>df_cases</code> is prefiled with some variables found in the background data sets. No data is stored in those variables but it was a way to specify what data should be added.</p>
+</div>
+<div id="check-variable-names-to-use-from-the-data" class="section level1">
+<h1>Check variable names to use from the data</h1>
+<p><code>df_cases</code> is prefiled with variable names found in the other data sets. No data is stored in those columns but it was a way to specify what data should be added.</p>
 <p>First, check which variables we have to fill up:</p>
 <pre class="python"><code>for n in df_cases.columns.values:
   print(n)</code></pre>
@@ -375,10 +376,10 @@ df_prom_after  = feather.read_dataframe(&quot;data/df_prom_after.feather&quot;)<
 ## POSTP_EQ5DAnxiety
 ## POSTP_VASHealth
 ## POSTP_EQ5D3Lindex</code></pre>
-<p>We do not know where to find each variable that should be append to <code>df_cases</code> (it can be in any one of the background data sets). We therefora make some variables containing variable names that will be used from each data set. Note that the project data has been pre-processed in order to make it anonymise and to not disclose too much data. This step might therefore be seen as unnecessary here, but it was relevant in the original project where each data set might have hundreds of columns that are not relevant in the specific case.</p>
+<p>Let’s assume that we do not know where to find each variable to append to <code>df_cases</code> (the prefixes to the names of each column might give a hint but let’s ignore that for now). We therefore make some objects with variable names that will be used from each data set. Note that the project data has been pre-processed in order to make it anonymise and to not disclose too much data. This step might therefore be seen as unnecessary, but it was relevant in the original project where each data set might have hundreds of columns.</p>
 <pre class="python"><code>def relevant_columns(x):
     &quot;&quot;&quot;
-    Function to find columns names from x also found in 'df_cases' 
+    Function to find column names from x also found in 'df_cases' 
     &quot;&quot;&quot;
     return np.intersect1d(df_cases.columns.values, x.columns.values)
 # Relevant columns from each background data set
@@ -398,11 +399,11 @@ cols_in_df_cases = (
         )
     ])
 )</code></pre>
-<p>Let us print out the number of value columns to use from each data set (we need some additional columns for indexing etcetera) just to get a feeling of what is needed:</p>
+<p>Let us print the number of value columns to use from each data set (we need some additional columns for indexing etcetera) just to get a feeling for what is needed:</p>
 <pre class="python"><code>print([len(x) for x in [
-  cols_in_df_op, cols_in_df_prom_before, cols_in_df_prom_after, cols_in_df_cases]
+  cols_in_df_cases, cols_in_df_op, cols_in_df_prom_before, cols_in_df_prom_after]
 ])</code></pre>
-<pre><code>## [12, 13, 14, 2]</code></pre>
+<pre><code>## [2, 12, 13, 14]</code></pre>
 </div>
 <div id="keep-only-relevant-data-columns" class="section level1">
 <h1>Keep only relevant data columns</h1>
@@ -414,30 +415,30 @@ df_prom_after  = df_prom_after[cols_in_df_prom_after]</code></pre>
 </div>
 <div id="time-periods" class="section level1">
 <h1>Time periods</h1>
-<p>We have to do identify date columns and store them as such.</p>
+<p>We have to identify date columns and store them as such.</p>
 <pre class="python"><code>df_op['P_SurgDate']         = pd.to_datetime(df_op['P_SurgDate'])
 df_prom_before['PREP_Date'] = pd.to_datetime(df_prom_before['PREP_Date'])
 df_prom_after['POSTP_Date'] = pd.to_datetime(df_prom_after['POSTP_Date'])</code></pre>
 <p>We will soon do some non equi joins based on the date columns. This requires us to first identify some wider time periods that the data from <code>df_op</code> relates to.</p>
 <pre class="python"><code>df_prom_before = (
     df_prom_before.assign(
-        # The lower bound is actually just &quot;PREP_Date&quot; itself but we prepare the
+        # The upper bound is actually just &quot;PREP_Date&quot; itself but we prepare the
         # code if we would like to modify this later
-        PREP_Date_min = lambda x: x.PREP_Date - pd.to_timedelta(0  , unit = 'd'),
-        PREP_Date_max = lambda x: x.PREP_Date + pd.to_timedelta(180, unit = 'd')
+        PREP_Date_min = lambda x: x.PREP_Date - pd.to_timedelta(0, unit = 'd'),
+        PREP_Date_max = lambda x: x.PREP_Date + pd.to_timedelta(180,   unit = 'd')
     )
 )
 df_prom_after = (
     df_prom_after.assign(
-        POSTP_Date_min = lambda x: x.POSTP_Date - pd.to_timedelta(365 - 180, unit = 'd'),
-        POSTP_Date_max = lambda x: x.POSTP_Date - pd.to_timedelta(356 + 180, unit = 'd')
+        POSTP_Date_min = lambda x: x.POSTP_Date - pd.to_timedelta(365 + 180, unit = 'd'),
+        POSTP_Date_max = lambda x: x.POSTP_Date - pd.to_timedelta(356 - 180, unit = 'd')
     )
 )</code></pre>
 </div>
 <div id="left-equi-join-from-df_op" class="section level1">
 <h1>Left equi join from df_op</h1>
 <p>It is now time to get some background data to add to the cases. The first step is just an equi-join where we want to add relevant columns from <code>df_op</code> to the cases in <code>df_cases</code>. This is done by a left join on the <code>fake_id</code> key column. We initiate a new dataFrame as a copy of <code>df_cases</code> and we keep track of its dimensionality before and after the join.</p>
-<pre class="python"><code>df = df_cases
+<pre class="python"><code>df = df_cases.copy()
 def print_dims():
     print(&quot;Rows and columns of df:&quot;, end = &quot; &quot;)
     for d in df.shape:
@@ -447,7 +448,8 @@ print_dims()</code></pre>
 <pre class="python"><code>df = pd.merge(df_cases, df_op, how = 'left')
 print_dims()</code></pre>
 <pre><code>## Rows and columns of df: 92 13</code></pre>
-<p>Both the number of rows and columns grow. This means that some cases are found more than once in <code>df_op</code> and (of course) that we have added the specified columns.</p>
+<p>Both the number of rows and columns grow. This means that some cases are found more than once in <code>df_op</code> and (of course) that we have added the specified columns. To have more than one match is OK in this case but it will not be OK later. We therefore introduce an index that identify all the current cases as unique.</p>
+<pre class="python"><code>df = df.assign(item_id = df.index)</code></pre>
 <p>Let’s have a look at the resultnig data:</p>
 <pre class="python"><code>print(df.head())</code></pre>
 <pre><code>##    fake_id HipRegStartHere  P_ASA  P_Age  P_BMI  P_DiaGrp  P_Diagnosis  \
@@ -457,19 +459,19 @@ print_dims()</code></pre>
 ## 3    62339            None   21.0  135.0  127.0     157.0         62.0   
 ## 4   318146            None  252.0   39.0  179.0     118.0        417.0   
 ## 
-##    P_KVA1  P_ProstType  P_Side P_SurgDate  R_Diagnosis  R_SurgDate  
-## 0     NaN          NaN     NaN        NaT          NaN         NaN  
-## 1     NaN          NaN     NaN        NaT          NaN         NaN  
-## 2     NaN          NaN     NaN        NaT          NaN         NaN  
-## 3   300.0        191.0   370.0 1732-11-27        212.0       262.0  
-## 4   137.0        336.0   327.0 1729-12-28        306.0       229.0</code></pre>
-<p>We see a lot of NaN:s since most cases were not actually found in <code>df_op</code>.</p>
+##    P_KVA1  P_ProstType  P_Side P_SurgDate  R_Diagnosis  R_SurgDate  item_id  
+## 0     NaN          NaN     NaN        NaT          NaN         NaN        0  
+## 1     NaN          NaN     NaN        NaT          NaN         NaN        1  
+## 2     NaN          NaN     NaN        NaT          NaN         NaN        2  
+## 3   300.0        191.0   370.0 1732-11-27        212.0       262.0        3  
+## 4   137.0        336.0   327.0 1729-12-28        306.0       229.0        4</code></pre>
+<p>We see a lot of None:s and NaN:s since most cases were not actually found in <code>df_op</code>.</p>
 </div>
 <div id="add-data-from-df_prom_before" class="section level1">
 <h1>Add data from df_prom_before</h1>
-<p>Now it starts to get a little tricky. We want to add some data from <code>df_prom_before</code>. Each individual might have more than one data row in this data set but we only want to include rows where <code>df_prom_before.PREP_Date</code> is a date at most 180 days before <code>df_cases.P_SurgDate</code> (we created <code>df_prom_before.PREP_Date_min</code> and <code>df_prom_before.PREP_Date_max</code> to make this comparison easier). Note that we do not want an inner join with just the cases where this condition is fullfiled. What we want is to add only those rows, but at the same time to keep al other rows intact (adding NaN values instead of the new values to the same columns). This is called a non equi join, since we do not only join by using a primary key being equal in both data sets, but we also need to compare date columns that should not be equal in order to join.</p>
-<p>There is not much information to help with this task. There is a question asked on StackOverflow but wihout any answer (<a href="https://stackoverflow.com/questions/35591993/non-equi-join-in-pandas">here</a>). There is also a <a href="https://gist.github.com/Nikolay-Lysenko/492a93aa834fb73b8090ade9506c3c90">gist</a> with some unfinished code.</p>
-<p>An alternative approach would be to split the task into two sub tasks:</p>
+<p>Now it starts to get a little tricky. We want to add some data from <code>df_prom_before</code>. Each individual might have more than one data point in this data set but we only want to include rows where <code>df_prom_before.PREP_Date</code> is a date at most 180 days before <code>df_cases.P_SurgDate</code> (we created <code>df_prom_before.PREP_Date_min</code> and <code>df_prom_before.PREP_Date_max</code> to make this comparison easier). Note that we do not want an inner join with just the cases where this condition is fullfiled. What we want is to add only those rows, but at the same time to keep al other rows intact (adding NaN values instead of the new values to the same columns). This is called a non equi join, since we do not only join by using a primary key being equal in both data sets, but we also need to compare date columns that should not be equal in order to join.</p>
+<p>There is not much information to help with this task. There is a question asked on <a href="https://stackoverflow.com/questions/35591993/non-equi-join-in-pandas">StackOverflow</a> but with no answer. There is also a <a href="https://gist.github.com/Nikolay-Lysenko/492a93aa834fb73b8090ade9506c3c90">gist</a> with some unfinished code.</p>
+<p>An alternative approach is to devide the task into sub tasks:</p>
 <ol style="list-style-type: decimal">
 <li>Do an inner equi join between <code>df</code> and <code>df_prom_before</code> by <code>fake_id</code>.</li>
 <li>We then filter out all rows from the data set from row 1 where the date comparison is not satisifed.</li>
@@ -491,6 +493,7 @@ print_dims()</code></pre>
 ## 4     35155 1731-02-14    1731-01-17    1731-07-16
 ## 5    220142 1736-04-18    1736-01-31    1736-07-29
 ## 9    290623 1735-08-11    1735-08-11    1736-02-07
+## 11   290623 1735-08-11    1735-08-11    1736-02-07
 ## 13   340938 1742-02-09    1742-02-09    1742-08-08
 ## 16   340938 1733-07-24    1733-06-16    1733-12-13
 ## 18   336507 1730-08-17    1730-08-03    1731-01-30
@@ -503,30 +506,83 @@ print_dims()</code></pre>
 <p>Looks alright! Time for step number 4:</p>
 <pre class="python"><code>df = pd.merge(df, df_tmp, &quot;left&quot;)
 print_dims()</code></pre>
-<pre><code>## Rows and columns of df: 92 27</code></pre>
-<p>The number of columns is the same but the number of columns have increased. Good! Let’s see how many non-missing data points we have for some columns.</p>
+<pre><code>## Rows and columns of df: 92 28</code></pre>
+<p>The number of columns is the same but the number of columns have increased. Good! Let’s see how many non-missing data points we have for some important columns.</p>
 <pre class="python"><code>print(df.loc[:, ['fake_id', 'HipRegStartHere', 'P_SurgDate', 'PREP_Date']].count())</code></pre>
 <pre><code>## fake_id            92
 ## HipRegStartHere     0
 ## P_SurgDate         30
 ## PREP_Date          16
 ## dtype: int64</code></pre>
-<p>All our cases have an id (actually they are not all unique since some individuals occour more than once). Only 30 cases could be found in <code>df_op</code> and only 16 was then found in <code>df_prom_before</code>. The column <code>HipRegStartHere</code> is some sort of crazy placeholder column indicating where the added column will start (empty by default).</p>
+<p>All our cases have an id (actually they are not all unique since some individuals occour more than once). Only 30 cases could be found in <code>df_op</code> and only 16 was then found in <code>df_prom_before</code>. The column <code>HipRegStartHere</code> is some sort of crazy placeholder column indicating where the added column will start (empty by default and pretty useless in this toy example).</p>
 </div>
 <div id="add-data-from-df_prom_after" class="section level1">
 <h1>Add data from df_prom_after</h1>
 <p>We now want to add some additional data from <code>df_prom_after</code>. This is similar to the previuos step but with two differences:</p>
 <ol style="list-style-type: decimal">
-<li>It is much more likely that each individual have more than one corresponding data points in this data set. It is therefore more important to identify the relevant time period.</li>
-<li>The relevant time period is here one year after (not before) <code>P_Surg_Date</code>. We allow a time window of 180 days before and after this date, hence <span class="math inline">\(356 \pm 180 = (185, 545)\)</span> days after <code>P_Surg_Date</code>.</li>
+<li>It is much more likely that each individual have more than one corresponding data point in this data set. It is therefore more important to identify the relevant time period.</li>
+<li>The relevant time period is here one year after (not before) <code>P_Surg_Date</code>. We allow a time window of 180 days before and after this date, hence <span class="math inline">\(365 \pm 180 = (185, 545)\)</span> days after <code>P_Surg_Date</code>.</li>
 </ol>
-<p>To be continued …</p>
+<pre class="python"><code>df_tmp_after = (
+    pd.merge(df, df_prom_after)
+   .query('POSTP_Date_min &lt;= P_SurgDate &lt;= POSTP_Date_max')
+   .drop_duplicates()
+)
+df = pd.merge(df, df_tmp_after, &quot;left&quot;)</code></pre>
+<p>Let’s take a new look at some numbers:</p>
+<pre class="python"><code>print_dims()</code></pre>
+<pre><code>## Rows and columns of df: 97 43</code></pre>
+<pre class="python"><code>print(df.loc[:, ['fake_id', 'HipRegStartHere', 'P_SurgDate', 'PREP_Date', 'POSTP_Date']].count())</code></pre>
+<pre><code>## fake_id            97
+## HipRegStartHere     0
+## P_SurgDate         35
+## PREP_Date          19
+## POSTP_Date         26
+## dtype: int64</code></pre>
+<p>The data set has grown! It means that we found more than one corresponding datapoint within approximately one year after <code>P_SurgDate</code> for some cases. Some of these also had a preoperative data point that has now been duplicated (hence the number of non-missing <code>PREP_Date</code> grew as well). This is a possible outcome and it is not wrong. Let’s have a look at some rows for individuals that appear more than once:</p>
+<pre class="python"><code>print(
+  df.loc[
+    df.duplicated('fake_id', keep = False), 
+    ['item_id', 'fake_id', 'P_SurgDate', 'PREP_Date', 'POSTP_Date']
+  ]
+  .head(10)
+)</code></pre>
+<pre><code>##     item_id  fake_id P_SurgDate  PREP_Date POSTP_Date
+## 12       12   140569 1734-02-24        NaT        NaT
+## 13       13   140569 1733-12-16        NaT        NaT
+## 14       14   220142 1736-04-18 1736-01-31 1737-07-12
+## 15       14   220142 1736-04-18 1736-01-31 1737-06-26
+## 16       15   220142 1731-04-26        NaT 1732-05-02
+## 18       17   290623 1735-08-11 1735-08-11 1736-10-18
+## 19       17   290623 1735-08-11 1735-08-11 1736-07-04
+## 20       18   290623 1735-05-26        NaT 1736-10-18
+## 21       18   290623 1735-05-26        NaT 1736-07-04
+## 26       23   340938 1742-02-09 1742-02-09 1743-02-24</code></pre>
+<p>In this case, it is our intention to maintain the number of rows. One way to do this is to include only one data point from <code>df_prom_after</code>. We choose the occasion closest to one year after <code>P_SurgDate</code>.</p>
+<p>We can add a new variable holding the number of days between one year after <code>P_SurgDate</code> and <code>POSTP_Date</code>. Cases with more than one row per <code>P_SurgDate</code> are grouped and sorted by this new variable. Then, only the first row is kept. We do not need the new variable any more and therefore drop it.</p>
+<pre class="python"><code>df = (df.assign(
+        Surg_to_POSTP = 
+          lambda x: 
+            abs(((
+                x.P_SurgDate + 
+                pd.to_timedelta(365, unit = 'd')) - 
+                x.POSTP_Date).dt.days
+            )
+      )
+    .sort_values(['item_id', 'Surg_to_POSTP'])
+    .drop_duplicates('item_id')
+    .drop(columns = 'Surg_to_POSTP')
+)
+print_dims()</code></pre>
+<pre><code>## Rows and columns of df: 92 43</code></pre>
 </div>
-<div id="sort-and-format-output" class="section level1">
-<h1>Sort and format output</h1>
-</div>
-<div id="export-result-to-excel" class="section level1">
-<h1>Export result to Excel</h1>
+<div id="export-the-result" class="section level1">
+<h1>Export the result</h1>
+<p>We are now ready to export the data to an Excel-file that can be used by any interested party. Note here that we used dates from the 18th centuary. It seems that those are not displayed correctly within Excel. Of course, the real data set had later dates but I wanted to have just totally made up dates due to privacy reasons.</p>
+<p>I also save a version of the data in the feather-format.</p>
+<pre class="python"><code>df = df.drop(columns = 'item_id')
+df.to_excel(&quot;output/extended_case_data.xlsx&quot;, index = False)
+df.reset_index().to_feather(&quot;output/extended_case_data.feather&quot;)</code></pre>
 </div>
 
 

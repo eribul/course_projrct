@@ -28,7 +28,7 @@ for n in df_cases.columns.values:
 
 def relevant_columns(x):
     """
-    Function to find columns names from x also found in 'df_cases' 
+    Function to find column names from x also found in 'df_cases' 
     """
     return np.intersect1d(df_cases.columns.values, x.columns.values)
 # Relevant columns from each background data set
@@ -54,7 +54,7 @@ cols_in_df_cases = (
 ############# Python Code block extracted from non_equi_joins.Rmd ##############
 
 print([len(x) for x in [
-  cols_in_df_op, cols_in_df_prom_before, cols_in_df_prom_after, cols_in_df_cases]
+  cols_in_df_cases, cols_in_df_op, cols_in_df_prom_before, cols_in_df_prom_after]
 ])
 
 
@@ -80,16 +80,16 @@ df_prom_after['POSTP_Date'] = pd.to_datetime(df_prom_after['POSTP_Date'])
 
 df_prom_before = (
     df_prom_before.assign(
-        # The lower bound is actually just "PREP_Date" itself but we prepare the
+        # The upper bound is actually just "PREP_Date" itself but we prepare the
         # code if we would like to modify this later
-        PREP_Date_min = lambda x: x.PREP_Date - pd.to_timedelta(0  , unit = 'd'),
-        PREP_Date_max = lambda x: x.PREP_Date + pd.to_timedelta(180, unit = 'd')
+        PREP_Date_min = lambda x: x.PREP_Date - pd.to_timedelta(0, unit = 'd'),
+        PREP_Date_max = lambda x: x.PREP_Date + pd.to_timedelta(180,   unit = 'd')
     )
 )
 df_prom_after = (
     df_prom_after.assign(
-        POSTP_Date_min = lambda x: x.POSTP_Date - pd.to_timedelta(365 - 180, unit = 'd'),
-        POSTP_Date_max = lambda x: x.POSTP_Date - pd.to_timedelta(356 + 180, unit = 'd')
+        POSTP_Date_min = lambda x: x.POSTP_Date - pd.to_timedelta(365 + 180, unit = 'd'),
+        POSTP_Date_max = lambda x: x.POSTP_Date - pd.to_timedelta(356 - 180, unit = 'd')
     )
 )
 
@@ -97,7 +97,7 @@ df_prom_after = (
 
 ############# Python Code block extracted from non_equi_joins.Rmd ##############
 
-df = df_cases
+df = df_cases.copy()
 def print_dims():
     print("Rows and columns of df:", end = " ")
     for d in df.shape:
@@ -110,6 +110,12 @@ print_dims()
 
 df = pd.merge(df_cases, df_op, how = 'left')
 print_dims()
+
+
+
+############# Python Code block extracted from non_equi_joins.Rmd ##############
+
+df = df.assign(item_id = df.index)
 
 
 
@@ -145,3 +151,65 @@ print_dims()
 ############# Python Code block extracted from non_equi_joins.Rmd ##############
 
 print(df.loc[:, ['fake_id', 'HipRegStartHere', 'P_SurgDate', 'PREP_Date']].count())
+
+
+
+############# Python Code block extracted from non_equi_joins.Rmd ##############
+
+df_tmp_after = (
+    pd.merge(df, df_prom_after)
+   .query('POSTP_Date_min <= P_SurgDate <= POSTP_Date_max')
+   .drop_duplicates()
+)
+df = pd.merge(df, df_tmp_after, "left")
+
+
+
+############# Python Code block extracted from non_equi_joins.Rmd ##############
+
+print_dims()
+
+
+
+############# Python Code block extracted from non_equi_joins.Rmd ##############
+
+print(df.loc[:, ['fake_id', 'HipRegStartHere', 'P_SurgDate', 'PREP_Date', 'POSTP_Date']].count())
+
+
+
+############# Python Code block extracted from non_equi_joins.Rmd ##############
+
+print(
+  df.loc[
+    df.duplicated('fake_id', keep = False), 
+    ['item_id', 'fake_id', 'P_SurgDate', 'PREP_Date', 'POSTP_Date']
+  ]
+  .head(10)
+)
+
+
+
+############# Python Code block extracted from non_equi_joins.Rmd ##############
+
+df = (df.assign(
+        Surg_to_POSTP = 
+          lambda x: 
+            abs(((
+                x.P_SurgDate + 
+                pd.to_timedelta(365, unit = 'd')) - 
+                x.POSTP_Date).dt.days
+            )
+      )
+    .sort_values(['item_id', 'Surg_to_POSTP'])
+    .drop_duplicates('item_id')
+    .drop(columns = 'Surg_to_POSTP')
+)
+print_dims()
+
+
+
+############# Python Code block extracted from non_equi_joins.Rmd ##############
+
+df = df.drop(columns = 'item_id')
+df.to_excel("output/extended_case_data.xlsx", index = False)
+df.reset_index().to_feather("output/extended_case_data.feather")
