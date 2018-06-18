@@ -3,8 +3,6 @@
 .RData
 .Ruserdata
 .feather
-data/*
-cache/*
 data-raw/*
 README.html
 r_version.R
